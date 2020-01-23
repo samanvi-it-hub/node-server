@@ -37,7 +37,11 @@ t.post('/register',(req,res)=>{
     mysqlConnection.query("INSERT INTO community SET ComunityName=?,Email=?,Address=?,Type=?,No_of_Villas=?,No_of_towers=?,UserName=?,Password=?",[com.comname,com.email,com.address,com.Type,com.villa,com.tower,com.userName,com.password], (err, rows, fields) => {   
         if (!err){
             res.send('Inserted');
-            mysqlConnection.query("CREATE TABLE Owners(HouseNum INT AUTO_INCREMENT PRIMARY KEY,OwnerName varchar(255),Email varchar(20),Ph varchar(20),UserId varchar(25),password varchar(20))");
+            mysqlConnection.query("CREATE TABLE owners(HouseNum INT AUTO_INCREMENT PRIMARY KEY,Owner varchar(255),Email varchar(20),Ph varchar(20),UserId varchar(25),password varchar(20))");
+            for(i=1;i<=com.villa;i++)
+            {
+                mysqlConnection.query("INSERT INTO owners SET Owner=?,Email=?,Ph=?,UserId=?,password=?",["Owner"+i,com.email,"",com.userName+i,com.password]);
+            }
         } else{
             console.log(err);
         }   
@@ -47,7 +51,7 @@ t.post('/register',(req,res)=>{
 
 t.post('/Owner',(req,res)=>{
     let own = req.body;
-    mysqlConnection.query("INSERT INTO owner SET HouseNum=?,OwnerName=?,Email=?,Ph=?,UserId=?,Password=?",[own.HouseNum,own.OwnerName,own.Email,own.Ph,own.UserId,own.Password], (err, rows, fields) => {   
+    mysqlConnection.query("INSERT INTO Owners SET HouseNum=?,Owner=?,Email=?,Ph=?,UserId=?,password=?",[own.house_no,own.ownername,own.email,own.ph,own.userName,own.password], (err, rows, fields) => {   
         if (!err){
             res.send('Inserted');
         } else{
@@ -58,7 +62,7 @@ t.post('/Owner',(req,res)=>{
 
 t.post('/Supervisor',(req,res)=>{
     let sup = req.body;
-    mysqlConnection.query("INSERT INTO supervisor SET SupervisorName=?,Ph=?,UserId=?,password=?",[sup.SupervisorName,sup.Ph,sup.UserId,sup.password], (err, rows, fields) => {   
+    mysqlConnection.query("INSERT INTO supervisor SET SupervisorName=?,Ph=?,UserId=?,password=?",[sup.supname,sup.ph,sup.userName,sup.password], (err, rows, fields) => {   
         if (!err){
             res.send('Inserted');
         } else{
