@@ -1,22 +1,22 @@
 const mysql = require('mysql');
 const express = require('express');
-const t = express();
+const app = express();
 const bodyparser = require('body-parser');
 const cors = require('cors');
 
 
 
-//t.use(bodyparser.json());
+//app.use(bodyparser.json());
 
-t.use(bodyparser.json());
-t.use(bodyparser.urlencoded({extended: false}));
-t.use(cors());
+app.use(bodyparser.json());
+app.use(bodyparser.urlencoded({extended: false}));
+app.use(cors());
 
 var mysqlConnection =mysql.createConnection({
     host:'localhost',
     user:'root',
     password:'',
-    database:'facility',
+    database:'sis_community_management',
     multipleStatements:true
 });
 
@@ -29,27 +29,22 @@ mysqlConnection.connect((err)=>{
 
 });
 
-t.listen(5000,()=>console.log('Server is running on 5000'));
+app.listen(5000,()=>console.log('Server is running on 5000'));
 
-t.post('/register',(req,res)=>{
+app.post('/register',(req,res)=>{
     let com = req.body;
     console.log(com);
-    mysqlConnection.query("INSERT INTO community SET ComunityName=?,Email=?,Address=?,Type=?,No_of_Villas=?,No_of_towers=?,UserName=?,Password=?",[com.comname,com.email,com.address,com.Type,com.villa,com.tower,com.userName,com.password], (err, rows, fields) => {   
-        if (!err){
-            res.send('Inserted');
-            mysqlConnection.query("CREATE TABLE owners(HouseNum INT AUTO_INCREMENT PRIMARY KEY,Owner varchar(255),Email varchar(20),Ph varchar(20),UserId varchar(25),password varchar(20))");
-            for(i=1;i<=com.villa;i++)
+    mysqlConnection.query("INSERT INTO sis_community SET sis_community_name=?,sis_community_type=?,sis_community_locality=?,sis_community_city=?,sis_community_state=?,sis_community_pin=?,sis_community_spoc1_name=?,sis_community_spoc2_name=?,sis_community_spoc1_ph=?,sis_community_spoc2_ph=?,sis_community_spoc1_email=?,sis_community_spoc2_email=?,sis_community_total_units=?,sis_community_blocks=?,sis_community_status=?,sis_community_creation_date=?,sis_community_modify_date=?,	sis_community_created_by=?,	sis_community_modify_by=?",[com.comname,com.locality,com.city,com.state,com.pin,com.type,com.spoc1_Name,com.spoc2_Name,com.spoc1_ph,com.spoc2_ph,com.spoc1_email,com.spoc2_email,,com.villa,com.tower,,,"swapna","swapna"], (err, rows, fields) => {   
+        for(i=1;i<=com.villa;i++)
             {
-                mysqlConnection.query("INSERT INTO owners SET Owner=?,Email=?,Ph=?,UserId=?,password=?",["Owner"+i,com.email,"",com.userName+i,com.password]);
+                mysqlConnection.query("INSERT INTO sis_community_users SET sis_community_id=?,sis_community_user_id=?,	sis_community_user_name=?,sis_community_user_username=?,sis_community_user_password=?,sis_community_user_role=?,sis_community_user_status=?,sis_community_user_creation_date=?,sis_community_user_modify_date=?,sis_community_user_created_by=?,sis_community_user_modify_by=?",[i,i,com.comname+i,com.comname+i,"12345","1","1",,"swapna","swapna"]);
             }
-        } else{
-            console.log(err);
-        }   
+       
     })
     
 });
 
-t.post('/Owner',(req,res)=>{
+app.post('/Owner',(req,res)=>{
     let own = req.body;
     mysqlConnection.query("INSERT INTO Owners SET HouseNum=?,Owner=?,Email=?,Ph=?,UserId=?,password=?",[own.house_no,own.ownername,own.email,own.ph,own.userName,own.password], (err, rows, fields) => {   
         if (!err){
@@ -60,7 +55,7 @@ t.post('/Owner',(req,res)=>{
     })
 });
 
-t.post('/Supervisor',(req,res)=>{
+app.post('/Supervisor',(req,res)=>{
     let sup = req.body;
     mysqlConnection.query("INSERT INTO supervisor SET SupervisorName=?,Ph=?,UserId=?,password=?",[sup.supname,sup.ph,sup.userName,sup.password], (err, rows, fields) => {   
         if (!err){
@@ -68,5 +63,29 @@ t.post('/Supervisor',(req,res)=>{
         } else{
             console.log(err);
         }   
+    })
+});
+
+app.post('/login',(req,res)=>{
+    let login = req.body;
+    mysqlConnection.query("SELECT * FROM owners WHERE UserId=?, password=?",[login.userid,login.password],   (err, rows, fields) => { 
+        if (!err){
+            res.send('Inserted');
+        } else{
+            console.log(err);
+        }   
+    })
+});
+
+
+// GET ALL Employees
+app.get('/type',(req,res)=>{
+    mysqlConnection.query("SELECT sis_community_type_id,sis_community_type_name FROM sis_community_type",(err,rows,fields)=>{
+        if(!err){
+            //console.log(rows[1].e_id);
+            res.send(rows);
+        }else{
+            console.log(err);
+        }
     })
 });
