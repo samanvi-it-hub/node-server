@@ -78,14 +78,25 @@ app.post('/Supervisor',(req,res)=>{
 
 app.post('/login',(req,res)=>{
     let login = req.body;
-    console.log("request data", login)
-    mysqlConnection.query("SELECT * FROM sis_community_users WHERE sis_community_user_username=? AND sis_community_user_password=?",[login.userid,login.password], (err, rows, fields) => { 
-        if (!err){
-            res.send(rows);
-        } else{
-            console.log(err);
-        }   
-    })
+    if(login.userid === 'admin' && login.password === 'admin'){
+        res.status(200).json({response:'admin',data:{name:'ganesh',email:'ganesh@gmail.com'}});
+        //res.send({admin})
+   
+    // } else{
+    //     mysqlConnection.query("SELECT sis_community_user_role FROM sis_community_users WHERE sis_community_user_username=? AND sis_community_user_password=?",[login.userid,login.password], (err, rows, fields) => {   
+    //         res.send(rows)
+    //     })
+
+
+    }
+    // console.log("request data", login)
+    // mysqlConnection.query("SELECT * FROM sis_community_users WHERE sis_community_user_username=? AND sis_community_user_password=?",[login.userid,login.password], (err, rows, fields) => { 
+    //     if (!err){
+    //         res.send(rows);
+    //     } else{
+    //         console.log(err);
+    //     }   
+    // })
 });
 
 
@@ -100,3 +111,16 @@ app.get('/type',(req,res)=>{
         }
     })
 });
+
+// GET DATA FROM COMMUNITY TABLE
+app.get('/communitydata', (req,res) =>{
+    mysqlConnection.query("SELECT sis_community_name FROM sis_community", (err,rows,fields)=> {
+        if(!err){
+            res.send(rows)
+        }else{
+            console.log(err)
+        }
+    })
+
+})
+
