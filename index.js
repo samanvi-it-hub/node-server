@@ -5,6 +5,7 @@ const bodyparser = require('body-parser');
 const cors = require('cors');
 const Cryptr = require('cryptr');
 const cryptr = new Cryptr('samanvi-it-hyderabad');
+const _ = require('underscore')
 
 app.use(bodyparser.json());
 app.use(cors());
@@ -150,9 +151,10 @@ app.post('/supervisor',(req,res)=>{
 app.post('/employee',(req,res)=>{
     var datetime = new Date();
     let emp = req.body;
-    mysqlConnection.query("INSERT INTO sis_community_employees SET emp_name=?,emp_phone=?,role_id=?,sis_community_id=?,emp_status=?,emp_created_by=?,emp_modify_by=?,emp_created_date=?,emp_modify_date=?",[emp.name,emp.phone,"6",emp.comm_id,"1","admin","admin",datetime,datetime], (err, rows, fields ) => {   
+    // console.log(emp);
+    mysqlConnection.query("INSERT INTO sis_community_employees SET emp_name=?,emp_phone=?,role_id=?,sis_community_id=?,emp_status=?,emp_created_by=?,emp_modify_by=?,emp_created_date=?,emp_modify_date=?",[emp.name,emp.phone,"6",emp.com_id,"1","supervisor","supervisor",datetime,datetime], (err, rows, fields ) => {   
       if (!err){
-           res.send('Inserted');
+            console.log('employee data enter success...');
         } else{
             console.log(err);
         }   
@@ -244,52 +246,58 @@ app.post('/add_boardmember',(req,res)=>{
 
 app.post('/login',(req,res,next)=>{
     login = req.body;
-    console.log(login);
+   // console.log(login);
     mysqlConnection.query("SELECT * FROM sis_community_login  WHERE login_username=? AND login_password=?",[login.userid,login.password],(err,result,fields)=>{
-        if(!err){
-            console.log("role_id",result[0].role_id);  
-            console.log("username",result[0].login_username);
-            
-            if(result[0].role_id == 1){
-                res.send(result);
-            } else if(result[0].role_id == 2 ) {
-                roleid=result[0].role_id;
-                username=result[0].login_username;
-                mysqlConnection.query("SELECT * FROM sis_community_owners  WHERE role_id=? AND owner_username=? ",[roleid,username],(err,rows,fields)=>{
-                    if(!err){
-                        console.log("OWNER-DATA",rows);
-                        res.send(rows);
-                    }else{
-                        console.log(err);
-                    }
-                } );
-            } else if(result[0].role_id == 3 ) {
-                roleid=result[0].role_id;
-                username=result[0].login_username;
-                mysqlConnection.query("SELECT * FROM sis_community_tenant  WHERE role_id=? AND tent_username=? ",[roleid,username],(err,rows,fields)=>{
-                    if(!err){
-                        console.log("TENANT-DATA",rows);
-                        res.send(rows);
-                    }else{
-                        console.log(err);
-                    }
-                } );
-            } else if(result[0].role_id == 4 ) {
-                roleid=result[0].role_id;
-                username=result[0].login_username;
-                mysqlConnection.query("SELECT * FROM sis_community_employees  WHERE role_id=? AND emp_username=? ",[roleid,username],(err,rows,fields)=>{
-                    if(!err){
-                        console.log("SUPERVISOR-DATA",rows);
-                        res.send(rows);
-                    }else{
-                        console.log(err);
-                    }
-                } );   
-            } 
-        } else{
-            console.log(err);
-            res.send(err);
+        if(_.isEmpty(result) === true) {
+            res.status(400).send('Bad Request')
+        }else{
+            //console.log('data')
+            if(!err){
+                console.log("role_id",result[0].role_id);  
+                console.log("username",result[0].login_username);
+                
+                if(result[0].role_id == 1){
+                    res.send(result);
+                } else if(result[0].role_id == 2 ) {
+                    roleid=result[0].role_id;
+                    username=result[0].login_username;
+                    mysqlConnection.query("SELECT * FROM sis_community_owners  WHERE role_id=? AND owner_username=? ",[roleid,username],(err,rows,fields)=>{
+                        if(!err){
+                            console.log("OWNER-DATA",rows);
+                            res.send(rows);
+                        }else{
+                            console.log(err);
+                        }
+                    } );
+                } else if(result[0].role_id == 3 ) {
+                    roleid=result[0].role_id;
+                    username=result[0].login_username;
+                    mysqlConnection.query("SELECT * FROM sis_community_tenant  WHERE role_id=? AND tent_username=? ",[roleid,username],(err,rows,fields)=>{
+                        if(!err){
+                            console.log("TENANT-DATA",rows);
+                            res.send(rows);
+                        }else{
+                            console.log(err);
+                        }
+                    } );
+                } else if(result[0].role_id == 4 ) {
+                    roleid=result[0].role_id;
+                    username=result[0].login_username;
+                    mysqlConnection.query("SELECT * FROM sis_community_employees  WHERE role_id=? AND emp_username=? ",[roleid,username],(err,rows,fields)=>{
+                        if(!err){
+                            console.log("SUPERVISOR-DATA",rows);
+                            res.send(rows);
+                        }else{
+                            console.log(err);
+                        }
+                    } );   
+                } 
+            } else{
+                console.log(err);
+                res.send(err);
+            }
         }
+        
     });   
 });
 
@@ -339,4 +347,112 @@ app.get('/tenantsdata', (req,res) =>{
     })
 
 })
+
+app.get('/getsuperemployeedata/:id', (req,res)=>{
+    id = req.params.id
+    mysqlConnection.query("SELECT * FROM sis_community_employees WHERE sis_community_id=? AND role_id=?",[id,'6'], (err,rows,fields)=>{
+        if(!err)
+        {
+            res.send(rows);
+        }
+        else{
+            console.log(err)
+        }
+    })
+})
+
+app.get('/tasklist', (req,res)=>{
+    mysqlConnection.query("SELECT * FROM sis_community_tasklist",(err,rows,fields)=>{
+        if(!err){
+            res.send(rows);
+        }else{
+            res.send(err);
+        }
+    })
+})
+
+
+app.post('/taskadd', (req,res)=>{
+    assign = req.body;
+    console.log(assign);
+    mysqlConnection.query("INSERT INTO sis_community_task_assignment SET sis_community_id=?, task_id=?, emp_id=?, task_status=?",[assign.com_id,assign.taskid,assign.empid,assign.task_status],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows);
+        }else{
+            res.send(err);
+        }
+    })
+
+})
+
+app.get('/alltasks', (req,res)=>{
+    query="SELECT sis_community_tasklist.task_name,sis_community_employees.emp_name,sis_community_task_assignment.task_status, sis_community_task_assignment.task_assign_id FROM sis_community_task_assignment INNER JOIN sis_community_tasklist ON sis_community_task_assignment.task_id = sis_community_tasklist.task_id INNER JOIN sis_community_employees ON sis_community_tasklist.task_id = sis_community_employees.emp_id"
+    mysqlConnection.query(query, (err,rows,fields)=>{
+        if(!err){
+            res.send(rows);
+        }else{
+            res.send(err);
+        }
+    })
+})
+
+
+app.get('/emplist', (req,res) =>{
+    mysqlConnection.query("SELECT * FROM sis_community_employees  WHERE emp_role_id=? AND sis_community_id=? ",['6','1'],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            console.log(err)
+        }
+    })
+
+})
+
+app.get('/commmaintenance', (req,res) =>{
+    var datetime = new Date();
+    var maintenance;
+    mysqlConnection.query("SELECT sis_community_maintenance FROM sis_community  WHERE sis_community_id=? ",['1'],(err,results,rows,fields)=>{
+        if(!err){
+            Object.keys(results).forEach(function(key)
+            {
+                var cost=results[key];
+                maintenance=cost.sis_community_maintenance;
+            })
+            mysqlConnection.query("SELECT * FROM sis_community_units  WHERE sis_community_id=? ",['1'],(err,result,rows,fields)=>{
+                if(!err){
+                    Object.keys(result).forEach(function(key)
+                    {
+                        var hnum=result[key];
+                        console.log(maintenance);
+                        console.log(hnum.house_num);
+                        mysqlConnection.query("INSERT INTO sis_community_maintenance SET sis_community_id=?,owner_house_num=?,maintanance_month=?,maintenance_amt=?,main_created_by=?,main_modify_by=?,main_created_date=?,main_modify_date=?",['1',hnum.house_num,datetime,maintenance,"admin","admin",datetime,datetime], (err, rows, fields ) => {   
+                            if (!err){
+                                 res.send('Inserted');
+                              } else{
+                                  console.log(err);
+                              }   
+                          })
+                    })
+                }else{
+                    console.log(err)
+                }
+            })
+        }else{
+            console.log(err)
+        }
+    })
+
+})
+
+app.get('/maintenance', (req,res) =>{
+    mysqlConnection.query("SELECT * FROM sis_community_maintenance  WHERE sis_community_id=? ",['1'],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            console.log(err)
+        }
+    })
+
+})
+
 
