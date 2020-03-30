@@ -109,7 +109,7 @@ app.post('/owner',(req,res)=>{
     own = req.body;
     // console.log(own);
     var datetime = new Date();
-    mysqlConnection.query("UPDATE sis_community_owners SET owner_name=?,owner_username=?,owner_password=?,owner_phone=?,owner_email=?,owner_house_num=?,owner_h_total_area=?,owner_h_cons_area=?,house_type=?,owner_modify_date=?,owner_modify_by=? WHERE owner_id=?",[own.name,own.username,own.password,own.phone,own.email,own.house_num,own.h_t_area,own.h_c_area,own.h_type,datetime,own.name,own.id], (err, rows, fields) => {   
+    mysqlConnection.query("UPDATE sis_community_owners SET owner_name=?,owner_username=?,owner_password=?,owner_phone=?,owner_email=?,owner_house_num=?,owner_modify_date=?,owner_modify_by=? WHERE owner_id=?",[own.name,own.username,own.password,own.phone,own.email,own.house_num,datetime,own.name,own.id], (err, rows, fields) => {   
         if (!err){
             mysqlConnection.query("UPDATE sis_community_login SET login_username=?,login_password=?,login_modify_by=?,login_modify_date=? WHERE owner_id=?",[own.username,own.password,own.name,datetime,own.id], (err, rows, fields)=>{
                 if(!err){
@@ -125,6 +125,39 @@ app.post('/owner',(req,res)=>{
     })
     res.end();
 });
+
+
+
+app.post('/housedetails', (req,res)=>{
+     housedata = req.body;
+     console.log(housedata)
+     var datetime = new Date();
+     mysqlConnection.query("INSERT INTO sis_community_units SET sis_community_id=?, owner_id=?, house_num=?, constructed_area=?, carpet_area=?, type=?, no_of_lights=?, no_of_fans=?, no_of_bedrooms=?, halls=?, kitchen=?,unit_created_by=?,unit_modified_by=?, unit_created_date=?,unit_modified_date=?",[housedata.community_id,housedata.owner_id,housedata.h_num,housedata.total_area,housedata.carpet_area, housedata.h_type,housedata.lights,housedata.fans,housedata.bedrooms,housedata.halls,housedata.kitchen,'owner','owner',datetime,datetime],(err,results,fields)=>{
+        if(!err){
+            unit_id=results.insertId;
+            mysqlConnection.query("UPDATE  sis_community_owners SET unit_id=? WHERE owner_id=?",[unit_id,housedata.owner_id],(err, rows,fields) =>{
+                if(!err){
+                    res.send(rows)
+                }else{
+                    res.send(err)
+                }
+            });
+         }else{
+            res.send(err)
+         }
+     })
+})
+
+app.get('/housealldetails/:id', (req,res)=>{
+    id = req.params.id
+    mysqlConnection.query("SELECT * FROM sis_community_units WHERE unit_id=?",[id],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            res.send(err)
+        }
+    })
+})
 
 app.post('/supervisor',(req,res)=>{
     var datetime = new Date();
@@ -162,11 +195,25 @@ app.post('/employee',(req,res)=>{
     res.end();
 });
 
+app.post('/addemployeefromadmin',(req,res)=>{
+    var datetime = new Date();
+    let emp = req.body;
+    // console.log(emp);
+    mysqlConnection.query("INSERT INTO sis_community_employees SET emp_name=?,emp_phone=?,role_id=?,sis_community_id=?,emp_status=?,emp_created_by=?,emp_modify_by=?,emp_created_date=?,emp_modify_date=?",[emp.empname,emp.empphone,"6",emp.comm_id,"1","admin","admin",datetime,datetime], (err, rows, fields ) => {   
+      if (!err){
+            console.log('employee data enter success...');
+        } else{
+            console.log(err);
+        }   
+    })
+    res.end();
+});
+
 app.post('/tenant',(req,res)=>{
     var datetime = new Date();
     let tent = req.body;
     console.log(req.body);
-    mysqlConnection.query("INSERT INTO sis_community_tenant SET sis_community_id=?,owner_id=?,owner_house_num=?,tent_username=?,tent_password=?,tent_name=?,tent_phone=?,tent_email=?,tent_status=?,tent_tennure=?,tent_created_by=?,tent_modify_by=?,tent_created_date=?,tent_modify_date=?",[tent.com_id,tent.own_id,tent.owner_house_num,tent.username,tent.password,tent.name,tent.phone,tent.email,"1",datetime,tent.own_name,tent.own_name,datetime,datetime], (err, result ) => {   
+    mysqlConnection.query("INSERT INTO sis_community_tenant SET sis_community_id=?,owner_id=?,role_id=?,owner_house_num=?,tent_username=?,tent_password=?,tent_name=?,tent_phone=?,tent_email=?,tent_status=?,tent_tennure=?,tent_created_by=?,tent_modify_by=?,tent_created_date=?,tent_modify_date=?",[tent.com_id,tent.own_id,'3',tent.owner_house_num,tent.username,tent.password,tent.name,tent.phone,tent.email,"1",tent.aggrementdate,datetime,tent.own_name,tent.own_name,datetime,datetime], (err, result ) => {   
       if (!err){
         tent_id=result.insertId;
           if(tent.check==true)
@@ -186,6 +233,17 @@ app.post('/tenant',(req,res)=>{
     })
     res.end();
 });
+
+app.get('/tenant/:id', (req,res)=>{
+    housenum = req.params.id;
+    mysqlConnection.query("SELECT * FROM sis_community_tenant WHERE owner_house_num=? AND tent_status=?",[housenum,'1'], (err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            res.send(err)
+        }
+    })
+})
 
 app.get('/comm_names',(req,res)=>{
     var datetime = new Date();
@@ -374,8 +432,8 @@ app.get('/tasklist', (req,res)=>{
 
 app.post('/taskadd', (req,res)=>{
     assign = req.body;
-    console.log(assign);
-    mysqlConnection.query("INSERT INTO sis_community_task_assignment SET sis_community_id=?, task_id=?, emp_id=?, task_status=?",[assign.com_id,assign.taskid,assign.empid,assign.task_status],(err,rows,fields)=>{
+    console.log("TaskData", assign);
+    mysqlConnection.query("INSERT INTO sis_community_task_assignment SET sis_community_id=?, task_id=?, emp_id=?, task_status=?, open_date=?",[assign.com_id,assign.taskid,assign.empid,assign.task_status,assign.opendate],(err,rows,fields)=>{
         if(!err){
             res.send(rows);
         }else{
@@ -386,7 +444,7 @@ app.post('/taskadd', (req,res)=>{
 })
 
 app.get('/alltasks', (req,res)=>{
-    query="SELECT sis_community_tasklist.task_name,sis_community_employees.emp_name,sis_community_task_assignment.task_status, sis_community_task_assignment.task_assign_id FROM sis_community_task_assignment INNER JOIN sis_community_tasklist ON sis_community_task_assignment.task_id = sis_community_tasklist.task_id INNER JOIN sis_community_employees ON sis_community_tasklist.task_id = sis_community_employees.emp_id"
+    query="SELECT sis_community_tasklist.task_name,sis_community_employees.emp_name,sis_community_task_assignment.task_status, sis_community_task_assignment.task_assign_id FROM sis_community_task_assignment INNER JOIN sis_community_tasklist ON sis_community_task_assignment.task_id = sis_community_tasklist.task_id INNER JOIN sis_community_employees ON sis_community_task_assignment.emp_id = sis_community_employees.emp_id"
     mysqlConnection.query(query, (err,rows,fields)=>{
         if(!err){
             res.send(rows);
@@ -408,6 +466,79 @@ app.get('/emplist', (req,res) =>{
 
 })
 
+
+
+app.post('/updatetask',(req,res)=>{
+    taskdata = req.body;
+    console.log("TASK DATA", taskdata);
+    mysqlConnection.query("UPDATE sis_community_task_assignment SET task_status=?, close_date=? WHERE task_assign_id=?",[taskdata.status,taskdata.complete_date,taskdata.task_ss_id], (err,rows,fields) => {
+        if(!err){
+            res.send(rows)
+        }else{
+            res.send(error)
+        }
+    })
+
+})
+
+app.post('/addattendance', (req,res)=>{
+    data = req.body;
+    console.log(data);
+    mysqlConnection.query("INSERT INTO sis_community_emp_attendance SET sis_community_id=?, emp_id=?, date=?, in_time=?",[data.com_id,data.eid,data.date,data.intime], (err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            res.send()
+        }
+    });
+})
+
+app.get('/housedata', (req,res)=>{
+    mysqlConnection.query("SELECT * FROM sis_community_units", (err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            res.send(err)
+        }
+    })
+})
+
+app.post('/addtenantfromadmin', (req,res)=>{
+    data = req.body
+    mysqlConnection.query("INSERT INTO sis_community_tenant SET sis_community_id=?,owner_id=?,role_id=?,owner_house_num=?,tent_username=?,tent_password=?,tent_name=?,tent_phone=?,tent_email=?,tent_status=?,tent_tennure=?,tent_created_by=?,tent_modify_by=?,tent_created_date=?,tent_modify_date=?",[data.comm_id,data.owner_id,'3',data.house_num,data.username,data.password,data.name,data.phone,data.email,"1",data.aggrementdate,datetime,'admin','admin',datetime,datetime], (err, result ) => {   
+        if (!err){
+          tent_id=result.insertId;
+            if(tent.check==true)
+            {
+              mysqlConnection.query("INSERT INTO sis_community_login SET sis_community_id=?,owner_id=?,login_username=?,login_password=?,role_id=?,login_status=?,login_created_by=?,login_modify_by=?,login_created_date=?,login_modify_date=?",[data.comm_id,tent_id,data.username,data.password,"3","1",'admin','admin',datetime,datetime],(err, result )=>{
+                  if(!err){
+                      console.log('ok');
+                  }else{
+                      console.log(err);
+                  }
+              });
+            }
+          //    res.send('Inserted');
+          } else{
+              console.log(err);
+          }   
+      })
+})
+
+app.get('/adminownerdata', (req,res)=>{
+    mysqlConnection.query("SELECT * FROM sis_community_owners", (err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            res.send(err)
+        }
+    })
+
+})
+
+
+
+/*==============================PAYMENTS AND MAINTANCE=======================================*/
 app.get('/commmaintenance', (req,res) =>{
     var datetime = new Date();
     var maintenance;
@@ -445,7 +576,7 @@ app.get('/commmaintenance', (req,res) =>{
 })
 
 app.get('/maintenance', (req,res) =>{
-    mysqlConnection.query("SELECT * FROM sis_community_maintenance  WHERE sis_community_id=? ",['1'],(err,rows,fields)=>{
+    mysqlConnection.query("SELECT * FROM sis_community_maintenance  WHERE sis_community_id=?",['1'],(err,rows,fields)=>{
         if(!err){
             res.send(rows)
         }else{
@@ -455,4 +586,62 @@ app.get('/maintenance', (req,res) =>{
 
 })
 
+app.get('/paymentmode', (req,res) =>{
+    mysqlConnection.query("SELECT * FROM sis_community_payment_mode  WHERE mode_status=? ",['1'],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            console.log(err)
+        }
+    })
 
+})
+
+app.post('/payment', (req,res) =>{
+    let pay = req.body;
+    var datetime = new Date();
+    console.log(pay);
+    if(pay.mode_id=='1'){
+    mysqlConnection.query("INSERT INTO sis_community_payments SET invoice_id=?,sis_community_id=?,owner_house_num=?,maintanance_month=?,maintenance_amt=?,payment_mode=?,payment_status=?,payment_created_by=?,payment_modify_by=?,payment_created_date=?,payment_modify_date=? ",[pay.modata,pay.com_id,pay.owner,pay.maintenance_month,pay.m_due,pay.mode_id,'1',"admin","admin",datetime,datetime],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            console.log(err)
+        }
+    })
+}
+else{
+    mysqlConnection.query("INSERT INTO sis_community_payments SET invoice_id=?,sis_community_id=?,owner_house_num=?,maintanance_month=?,maintenance_amt=?,payment_mode=?,payment_status=?,payment_created_by=?,payment_modify_by=?,payment_created_date=?,payment_modify_date=? ",[pay.modata,pay.com_id,pay.owner,pay.maintenance_month,pay.m_due,pay.mode_id,'2',"admin","admin",datetime,datetime],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            console.log(err)
+        }
+    })
+}
+
+})
+
+app.get('/pendingPament', (req,res) =>{
+    mysqlConnection.query("SELECT * FROM sis_community_payments  WHERE payment_status=?",['2'],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            console.log(err)
+        }
+    })
+
+})
+
+app.post('/pamentsapproval',(req,res)=>{
+    var datetime = new Date();
+    let pay = req.body;
+    mysqlConnection.query("UPDATE sis_community_payments SET payment_status=?,payment_modify_by=?,payment_modify_date=?",['1',"admin",datetime], (err, rows, fields ) => {   
+      if (!err){
+           res.send('Inserted');
+        } else{
+            console.log(err);
+        }   
+    })
+    res.end();
+});
