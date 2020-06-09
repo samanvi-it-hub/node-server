@@ -409,6 +409,19 @@ app.post('/owneraddtenant',(req,res)=>{
 
 /*-------------------------------------------------SUPERVISOR DASHBOARD QUERIES--------------------------------------------------------------------*/
 
+app.get('/getCommData/:id', (req,res) =>{
+    id = req.params.id
+    console.log(id);
+    mysqlConnection.query("SELECT sis_community_name FROM sis_community  WHERE sis_community_id=?",[id],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows);
+        }else{
+            console.log(err)
+        }
+    });
+
+})
+
 
 /*==============================PAYMENTS AND MAINTANCE=======================================*/
 
@@ -601,5 +614,355 @@ app.get('/getblockdata/:id', (req,res) =>{
         }
     })
     
+
+})
+
+
+app.post('/attendence', (req,res) =>{
+    let att = req.body;
+    var datetime = new Date();
+    console.log(att);
+    att.empl.forEach(function(value, index, array){
+  mysqlConnection.query("INSERT INTO sis_community_attendence SET sis_community_id=?,date=?,emp_id=?,in_time=?,attendence_status=?",[att.com_id,att.date,value.id,value.in_time,value.status],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            console.log(err)
+        }
+    })
+})
+})
+
+app.post('/attendenceupdate', (req,res) =>{
+    let att = req.body;
+    var datetime = new Date();
+    console.log(att);
+    att.empl.forEach(function(value, index, array){
+  mysqlConnection.query("UPDATE sis_community_attendence SET out_time=? WHERE attendence_id=?",[value.out_time,value.id],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            console.log(err)
+        }
+    })
+})
+})
+
+app.get('/getsuperemployeedata/:id', (req,res) =>{
+    id = req.params.id
+    date = req.params.date
+    mysqlConnection.query("SELECT * FROM sis_community_employees  WHERE sis_community_id=?",[id],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            console.log(err)
+        }
+    })
+    
+
+})
+
+app.get('/gettodayemps/:id/:date', (req,res) =>{
+    id = req.params.id
+    date = req.params.date
+    console.log(date);
+    mysqlConnection.query("SELECT * FROM sis_community_attendence JOIN sis_community_employees ON sis_community_attendence.emp_id=sis_community_employees.emp_id  WHERE sis_community_attendence.sis_community_id=? AND sis_community_attendence.date=?",[id,date],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+        }else{
+            console.log(err)
+        }
+    })
+    
+
+})
+
+app.get('/ownerallcomplaints/:comp_id/:owner_id/:unit_id', (req,res) =>{
+    comp_id = req.params.comp_id
+    owner_id = req.params.owner_id
+    unit_id=req.params.unit_id
+    console.log(comp_id);
+    mysqlConnection.query("SELECT * FROM sis_community_complaints WHERE sis_community_id=? AND owner_id=? AND unit_id=?",[comp_id,owner_id,unit_id],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+            console.log("sucess");
+        }else{
+            console.log(err)
+        }
+    })
+    console.log("wer");
+    
+
+})
+
+
+app.get('/allcomplaints/:comp_id', (req,res) =>{
+    comp_id = req.params.comp_id
+    
+    mysqlConnection.query("SELECT * FROM sis_community_complaints WHERE sis_community_id=? AND status IN ('NOTSTARTED','OPEN','INPROGRESS')",[comp_id],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows)
+            console.log("sucess");
+        }else{
+            console.log(err)
+        }
+    })
+    console.log("wer");
+    
+
+})
+
+app.post('/ownercomplaint',(req,res)=>{
+    var datetime = new Date();
+    let complaint= req.body;
+    console.log(complaint)
+    mysqlConnection.query("INSERT INTO sis_community_complaints SET sis_community_id=?,owner_id=?,unit_id=?,complaint=?,complaint_description=?,owner_comments=?,complaint_date=?,urgent=?,status=?,created_by=?,modify_by=?,created_date=?,modify_date=?",[complaint.communityid,complaint.ownerid,complaint.unitid,complaint.complaint,complaint.Description,complaint.comments,datetime,complaint.urgent,"NOTSTARTED","gj","hhj",datetime,datetime], (err, rows, fields ) => {   
+      if (!err){
+            console.log('success...');
+        } else{
+            console.log(err);
+        }   
+    })
+    res.end();
+});
+
+app.post('/complaint',(req,res)=>{
+    var datetime = new Date();
+    let complaint= req.body;
+    console.log(complaint)
+    mysqlConnection.query("SELECT * FROM sis_community_complaints WHERE comp_id=?",[complaint.comp_id], (err, rows, fields ) => {   
+      if (!err){
+            if(rows.status==null)
+            {
+                mysqlConnection.query("UPDATE sis_community_complaints SET start_date=?,emp_id=?,status=? WHERE comp_id=?",[complaint.start_date,complaint.empid,complaint.status,complaint.comp_id],(err, rows, fields)=>{
+                    if (!err){
+                        console.log('success...');
+                    } else{
+                        console.log(err);
+                    }    
+                })
+                mysqlConnection.query("INSERT INTO sis_complaint_history SET complaint_id =?,date=?,sup_comments=?,status=?,created_by=?,modify_by=?,created_date=?,modify_date=?",[complaint.comp_id,datetime,complaint.sup_comments,complaint.status,"sd","sd",datetime,datetime],(err, rows, fields)=>{
+                    if (!err){
+                        console.log('success...');
+                    } else{
+                        console.log(err);
+                    } 
+                })
+            }
+            if(rows.status=="OPEN")
+            {
+               
+                mysqlConnection.query("INSERT INTO sis_complaint_history SET complaint_id =?,date=?,sup_comments=?,status=?,created_by=?,modify_by=?,created_date=?,modify_date=?",[complaint.comp_id,datetime,complaint.sup_comments,complaint.status,"sd","sd",datetime,datetime],(err, rows, fields)=>{
+                    if (!err){
+                        console.log('success...');
+                    } else{
+                        console.log(err);
+                    } 
+                })
+            }
+        } else{
+            console.log(err);
+        }   
+    })
+    res.end();
+});
+app.post('/complaints', (req,res) =>{
+    
+    
+    let com = req.body;
+    console.log(com);
+    mysqlConnection.query("SELECT * FROM sis_community_complaints  WHERE status=?",[com.search],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows);
+            console.log(rows);
+        }else{
+            console.log(err)
+        }
+    });
+
+})
+
+app.get('/history/:id', (req,res) =>{
+    id = req.params.id
+    console.log(id);
+    let men = req.body;
+    console.log(men);
+    mysqlConnection.query("SELECT * FROM sis_complaint_history  WHERE complaint_id=?",[id],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows);
+        }else{
+            console.log(err)
+        }
+    });
+
+})
+
+app.post('/cancel', (req,res) =>{
+    let cancel = req.body;
+    
+    mysqlConnection.query("UPDATE sis_community_complaints SET status=?,cancel_comments=? WHERE comp_id=?",["CANCEL",cancel.cancel_comments,cancel.comp_id],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows);
+        }else{
+            console.log(err)
+        }
+    });
+
+})
+
+
+app.post('/addcomplaints',(req,res)=>{
+    var datetime = new Date();
+    let complaint= req.body;
+    console.log(complaint)
+    mysqlConnection.query("SELECT * FROM sis_community_units WHERE sis_community_id=? AND house_num=?",[complaint.communityid,complaint.hnum], (err,results, rows, fields ) => {   
+      if (!err){
+        Object.keys(results).forEach(function(key)
+        {
+        var set=results[key];
+           owner_id=set.owner_id ;
+           unit_id=set.unit_id;
+           console.log(owner_id);
+           console.log(unit_id);
+        })
+           mysqlConnection.query("INSERT INTO sis_community_complaints SET sis_community_id=?,owner_id=?,unit_id=?,complaint=?,complaint_description=?,owner_comments=?,complaint_date=?,urgent=?,created_by=?,modify_by=?,created_date=?,modify_date=?",[complaint.communityid,owner_id,unit_id,complaint.complaint,complaint.Description,complaint.comments,datetime,complaint.urgent,"gj","hhj",datetime,datetime], (err, rows, fields ) => {   
+            if (!err){
+                  console.log('success...');
+              } else{
+                  console.log(err);
+              }   
+          })
+        } else{
+            console.log(err);
+        }   
+    })
+    res.end();
+});
+
+app.post('/addtaskdaily',(req,res)=>{
+    var datetime = new Date();
+    let complaint= req.body;
+    console.log(complaint)
+    mysqlConnection.query("INSERT INTO sis_community_complaints SET sis_community_id=?,complaint=?,complaint_date=?,emp_id=?,status=?,created_by=?,modify_by=?,created_date=?,modify_date=?",[complaint.communityid,complaint.taskname,datetime,complaint.empid,"NOTSTARTED","gj","hhj",datetime,datetime], (err, rows, fields ) => {   
+      if (!err){
+            console.log('success...');
+        } else{
+            console.log(err);
+        }   
+    })
+    res.end();
+});
+
+app.get('/tasklist', (req,res) =>{
+    id = req.params.id
+    console.log(id);
+    
+    mysqlConnection.query("SELECT * FROM sis_community_tasklist",(err,rows,fields)=>{
+        if(!err){
+            res.send(rows);
+        }else{
+            console.log(err)
+        }
+    });
+
+})
+
+app.post('/addotherdues', (req,res) =>{
+    let main = req.body;
+    var datetime = new Date();
+    console.log(main);
+    main.empl.forEach(function(value, index, array){
+  mysqlConnection.query("UPDATE sis_community_maintenance SET otherdues=?,discounts=?,total=? WHERE invoice_id=?",[value.others,value.discounts,value.maintenance_amt+value.due+value.others-value.discounts,value.id],(err,rows,fields)=>{
+        if(!err){
+           // res.send(rows)
+        }else{
+            console.log(err)
+        }
+    })
+})
+})
+
+app.post('/addvendor',(req,res)=>{
+    var datetime = new Date();
+    let vendor= req.body;
+    console.log(vendor)
+    mysqlConnection.query("INSERT INTO sis_community_vendors SET sis_community_id=?,vendor_name=?,vendor_phone=?,vendor_email =?,vendor_address=?,created_by=?,modify_by=?,created_date=?,modify_date=?",[vendor.communityid,vendor.vendor_name,vendor.phone,vendor.email,vendor.Address,"gj","hhj",datetime,datetime], (err, rows, fields ) => {   
+      if (!err){
+            console.log('success...');
+        } else{
+            console.log(err);
+        }   
+    })
+    res.end();
+});
+
+app.get('/allcommvendors/:id', (req,res) =>{
+    id = req.params.id
+    console.log(id);
+    
+    mysqlConnection.query("SELECT * FROM sis_community_vendors  WHERE sis_community_id=?",[id],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows);
+        }else{
+            console.log(err)
+        }
+    });
+
+})
+
+
+app.post('/adminownerreports', (req,res) =>{
+    let owner= req.body;
+    console.log(owner)
+   
+    mysqlConnection.query("SELECT * FROM sis_community_owners  WHERE sis_community_id=?",[owner.community_id],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows);
+        }else{
+            console.log(err)
+        }
+    });
+
+})
+
+app.post('/admintenantreports', (req,res) =>{
+    let tenant= req.body;
+    console.log(tenant)
+   
+    mysqlConnection.query("SELECT * FROM sis_community_tenant  WHERE sis_community_id=?",[tenant.community_idid],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows);
+        }else{
+            console.log(err)
+        }
+    });
+
+})
+
+
+app.post('/adminresidentreports', (req,res) =>{
+    let resi= req.body;
+    console.log(resi)
+   
+    mysqlConnection.query("SELECT * FROM sis_community_units  WHERE sis_community_id=?",[resi.community_id],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows);
+        }else{
+            console.log(err)
+        }
+    });
+  
+})
+
+app.post('/vendors', (req,res) =>{
+    let vendor= req.body;
+    console.log(vendor)
+    mysqlConnection.query("SELECT * FROM sis_community_vendors  WHERE sis_community_id=?",[vendor.community_id],(err,rows,fields)=>{
+        if(!err){
+            res.send(rows);
+        }else{
+            console.log(err)
+        }
+    });
 
 })
